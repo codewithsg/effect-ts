@@ -1,0 +1,1 @@
+This repo is to learn how effectts works with hono and tanstack router along with different types of observability
