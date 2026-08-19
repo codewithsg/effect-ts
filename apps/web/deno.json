@@ -1,0 +1,11 @@
+{
+    "name": "@app/web",
+    "version": "0.1.0",
+    "imports": {
+        "effect": "npm:effect@rc"
+    },
+    "tasks": {
+        "dev": "deno run --watch -A src/main.ts",
+        "start": "deno run -A src/main.ts"
+    }
+}
