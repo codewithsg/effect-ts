@@ -1,11 +1,17 @@
 {
     "name": "@app/server",
     "version": "0.1.0",
+    "compilerOptions": {
+        "lib": ["deno.ns"]
+    },
     "imports": {
-        "effect": "npm:effect@rc"
+        "@effect/sql-pg": "npm:@effect/sql-pg@rc",
+        "@types/pg": "npm:@types/pg@^8.23.1",
+        "effect": "npm:effect@rc",
+        "pg": "npm:pg@^8.23.0"
     },
     "tasks": {
-        "dev": "deno run --watch -A src/main.ts",
-        "start": "deno run -A src/main.ts"
+        "dev": "deno run --watch --env -A src/main.ts",
+        "start": "deno run --env -A src/main.ts"
     }
 }

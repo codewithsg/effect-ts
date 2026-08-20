@@ -1,5 +1,8 @@
-import { Effect, Console } from "effect";
+import { Effect } from "effect";
+import { checkDatabaseHealth, sqlConnection } from "./db.ts";
 
-const program = Console.log("Hello, World!");
+const program = Effect.gen(function* () {
+    yield* checkDatabaseHealth;
+});
 
-Effect.runSync(program);
+Effect.runPromise(program.pipe(Effect.provide(sqlConnection)));

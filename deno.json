@@ -5,11 +5,17 @@
     ],
     "nodeModulesDir": "auto",
     "tasks": {
-        "web:dev": "deno run --watch -A apps/web/src/main.ts",
-        "web:start": "deno run -A apps/web/src/main.ts",
-        "server:dev": "deno run --watch -A apps/server/src/main.ts",
-        "server:start": "deno run -A apps/server/src/main.ts",
+        "web:dev": "deno run --watch --env=apps/web/.env -A apps/web/src/main.ts",
+        "web:start": "deno run --env=apps/web/.env -A apps/web/src/main.ts",
+        "server:dev": "deno run --watch --env=apps/server/.env -A apps/server/src/main.ts",
+        "server:start": "deno run --env=apps/server/.env -A apps/server/src/main.ts",
         "dev": "deno task web:dev & deno task server:dev",
         "start": "deno task web:start & deno task server:start"
+    },
+    "allowScripts": {
+        "allow": [],
+        "deny": [
+            "npm:msgpackr-extract@3.0.4"
+        ]
     }
 }
