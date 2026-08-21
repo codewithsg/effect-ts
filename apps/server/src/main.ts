@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { checkDatabaseHealth, sqlConnection } from "./db.ts";
+import { checkDatabaseHealth, sqlConnection } from "./db/db.ts";
 
 const program = Effect.gen(function* () {
     yield* checkDatabaseHealth;
