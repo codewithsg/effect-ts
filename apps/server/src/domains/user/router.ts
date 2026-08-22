@@ -1,5 +1,5 @@
 import { Rpc, RpcGroup } from 'effect/unstable/rpc';
-import { CreateUserInputSchema, GetUserByIdInputSchema, User } from "./model.ts";
+import { CreateUserInputSchema, GetUserByIdInputSchema, User, UpdateUserInputSchema } from "./model.ts";
 import { UserAlreadyExistsError, UserDecodingError, UserNotFoundError } from "./error.ts";
 import { Effect, Schema } from "effect";
 import { Users } from "./service.ts";
@@ -13,6 +13,11 @@ export class UserRouter extends RpcGroup.make(
     }),
     Rpc.make('GetUserById', {
         payload: GetUserByIdInputSchema,
+        success: User,
+        error: Schema.Union([UserNotFoundError, UserDecodingError, DatabaseError])
+    }),
+    Rpc.make('UpdateUser', {
+        payload: UpdateUserInputSchema,
         success: User,
         error: Schema.Union([UserNotFoundError, UserDecodingError, DatabaseError])
     }),
@@ -30,6 +35,7 @@ export const UserRouterLive = UserRouter.toLayer(
         return {
             CreateUser: (input)=>users.create(input),
             GetUserById: ({id})=>users.findById(id),
+            UpdateUser: (input)=>users.update(input),
             ListUsers:()=>users.list()
         }
     })

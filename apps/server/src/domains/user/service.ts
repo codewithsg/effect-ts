@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/unstable/sql";
-import { User,TCreateUserInput } from "./model.ts";
+import { User,TCreateUserInput, TUpdateUserInput } from "./model.ts";
 import { UserAlreadyExistsError, UserDecodingError, UserNotFoundError } from "./error.ts";
 import { dbQuery } from "../../db/db.ts";
 import { DatabaseError } from "../../db/error.ts";
@@ -13,6 +13,7 @@ export class Users extends Context.Service<Users, {
     readonly findById: (id: number) => Effect.Effect<User, UserNotFoundError | UserDecodingError | DatabaseError>;
     readonly create: (input: TCreateUserInput) => Effect.Effect<User, UserAlreadyExistsError | UserDecodingError | DatabaseError>;
     readonly list: () => Effect.Effect<readonly User[], UserDecodingError | DatabaseError>;
+    readonly update: (input: TUpdateUserInput) => Effect.Effect<User, UserNotFoundError | UserDecodingError | DatabaseError>;
 }>()(
     "Users"
 ) {}
@@ -71,7 +72,32 @@ export const UsersLive = Layer.effect(
                         cause
                     }))
                 );
-            }).pipe(Effect.provideService(SqlClient.SqlClient, sql)) 
+            }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
+            update: (input)=> Effect.gen(function* (){
+                const existingUser = yield* dbQuery((sql)=> sql<User>`
+                SELECT * FROM users WHERE id=${input.id}`,
+                'Failed to check whether user already exists'
+            );
+
+            const user = Option.fromNullOr(existingUser[0]);
+
+            if(Option.isNone(user)){
+                return yield* new UserNotFoundError({id:input.id});
+            }
+
+            const updatedUser = yield* dbQuery((sql)=> sql<User>`
+            UPDATE users SET name=${input.name ?? user.value.name}, role=${input.role ?? user.value.role}, isVerified=${input.isVerified ?? user.value.isVerified}, availableAmount=${input.availableAmount ?? user.value.availableAmount}
+            WHERE id=${input.id} RETURNING *`,
+            'Failed to update user'
+            );
+
+            return yield* decodeUser(updatedUser[0]).pipe(
+                Effect.mapError((cause)=>new UserDecodingError({
+                    message: 'Failed to decode user returned from database',
+                    cause
+                }))
+            );  
+            }).pipe(Effect.provideService(SqlClient.SqlClient, sql))
         })
     })
 )
