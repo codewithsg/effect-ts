@@ -20,7 +20,7 @@ export class PaymentService extends Context.Service<PaymentService, {
     >
 }>()("PaymentService") {}
 
-const mockPaymentGateway = (paymentId: number) => Effect.gen(function* () {
+const mockPaymentGateway = (paymentId: number, userId: number) => Effect.gen(function* () {
     yield* Effect.log(`Calling mock payment provider for payment ${paymentId}...`);
     // Random delay up to 4 seconds to test timeout
     const delay = Math.random() * 4000;
@@ -28,14 +28,14 @@ const mockPaymentGateway = (paymentId: number) => Effect.gen(function* () {
     
     // 20% chance of random gateway failure
     if (Math.random() < 0.2) {
-        return yield* new PaymentGatewayError({ message: "Payment gateway internal error" });
+        return yield* new PaymentGatewayError({ userId, message: "Payment gateway internal error" });
     }
     
     yield* Effect.log(`Payment provider succeeded for payment ${paymentId}`);
     return true;
 }).pipe(
     Effect.timeout("3 seconds"),
-    Effect.catchTag("TimeoutError", () => Effect.fail(new PaymentGatewayTimeoutError({ message: "Payment gateway timeout" })))
+    Effect.catchTag("TimeoutError", () => Effect.fail(new PaymentGatewayTimeoutError({ userId, message: "Payment gateway timeout" })))
 );
 
 export const PaymentLive = Layer.effect(
@@ -92,7 +92,7 @@ export const PaymentLive = Layer.effect(
                     `, "Failed to insert pending payment");
                     
                     const payment = yield* decodePayment(insertedPaymentData[0]).pipe(
-                        Effect.mapError((cause) => new PaymentDecodingError({ message: 'Failed to decode payment', cause }))
+                        Effect.mapError((cause) => new PaymentDecodingError({ userId: user.id, message: 'Failed to decode payment', cause }))
                     );
 
                     const insertedItemsData: PaymentItem[] = [];
@@ -111,7 +111,7 @@ export const PaymentLive = Layer.effect(
 
                 const { payment, items } = paymentResult;
 
-                const gatewayCall = retryable(mockPaymentGateway(payment.id), 5);
+                const gatewayCall = retryable(mockPaymentGateway(payment.id, user.id), 5);
 
                 const gatewayResult = yield* gatewayCall.pipe(
                     Effect.match({
@@ -146,6 +146,7 @@ export const PaymentLive = Layer.effect(
 
                     return yield* new PaymentFailedError({
                         paymentId: payment.id,
+                        userId: user.id,
                         message: "Payment provider failed after retries",
                         cause: gatewayResult
                     });
