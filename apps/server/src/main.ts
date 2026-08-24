@@ -4,6 +4,7 @@ import { RpcSerialization } from "effect/unstable/rpc";
 import { DenoHttpServer } from "@effect/platform-deno";
 import { MainRouterLive } from "./router.ts";
 import { checkDatabaseHealth, sqlConnection } from "./db/db.ts";
+import { seed } from "./db/seed.ts";
 import { UsersLive } from "./domains/user/service.ts";
 import { ProductsLive } from "./domains/product/service.ts";
 import { PaymentLive } from "./domains/payment/service.ts";
@@ -16,6 +17,7 @@ const serverLayer = HttpRouter.serve(MainRouterLive).pipe(
 
 const program = Effect.gen(function* () {
     yield* checkDatabaseHealth;
+    yield* seed;
     yield* Effect.logInfo("Server started on port 8848");
 });
 
