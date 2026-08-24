@@ -1,20 +1,31 @@
-import { Effect } from "effect";
-import { checkDatabaseHealth, sqlConnection } from "./db/db.ts";
+import { Effect, Layer } from "effect";
+import { HttpRouter } from "effect/unstable/http";
+import { RpcSerialization } from "effect/unstable/rpc";
+import { DenoHttpServer } from "@effect/platform-deno";
 import { MainRouterLive } from "./router.ts";
+import { checkDatabaseHealth, sqlConnection } from "./db/db.ts";
 import { UsersLive } from "./domains/user/service.ts";
 import { ProductsLive } from "./domains/product/service.ts";
 import { PaymentLive } from "./domains/payment/service.ts";
 
+const ServerLive = DenoHttpServer.layer({ port: 8848 });
+
+const serverLayer = HttpRouter.serve(MainRouterLive).pipe(
+    Layer.provide(ServerLive)
+);
+
 const program = Effect.gen(function* () {
     yield* checkDatabaseHealth;
+    yield* Effect.logInfo("Server started on port 8848");
 });
 
-Effect.runPromise(
-    program.pipe(
-        Effect.provide(MainRouterLive),
-        Effect.provide(PaymentLive),
-        Effect.provide(ProductsLive),
-        Effect.provide(UsersLive),
-        Effect.provide(sqlConnection)
-    )
+const runnable = program.pipe(
+    Effect.andThen(Layer.launch(serverLayer)),
+    Effect.provide(PaymentLive),
+    Effect.provide(ProductsLive),
+    Effect.provide(UsersLive),
+    Effect.provide(sqlConnection),
+    Effect.provide(RpcSerialization.layerJson)
 );
+
+Effect.runPromise(runnable as any);

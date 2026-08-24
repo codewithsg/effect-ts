@@ -1,42 +1,104 @@
-import { Rpc, RpcGroup } from 'effect/unstable/rpc';
+import { Rpc, RpcGroup, RpcServer } from 'effect/unstable/rpc';
 import { CreateUserInputSchema, GetUserByIdInputSchema, User, UpdateUserInputSchema } from "./model.ts";
 import { UserAlreadyExistsError, UserDecodingError, UserNotFoundError } from "./error.ts";
-import { Effect, Schema } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import { Users } from "./service.ts";
 import { DatabaseError } from "../../db/error.ts";
 
-export class UserRouter extends RpcGroup.make(
+export class CreateUserRouter extends RpcGroup.make(
     Rpc.make('CreateUser', {
         payload: CreateUserInputSchema,
         success: User,
         error: Schema.Union([UserAlreadyExistsError, UserDecodingError, DatabaseError])
-    }),
+    })
+) { }
+
+export class GetUserByIdRouter extends RpcGroup.make(
     Rpc.make('GetUserById', {
         payload: GetUserByIdInputSchema,
         success: User,
         error: Schema.Union([UserNotFoundError, UserDecodingError, DatabaseError])
-    }),
+    })
+) { }
+
+export class UpdateUserRouter extends RpcGroup.make(
     Rpc.make('UpdateUser', {
         payload: UpdateUserInputSchema,
         success: User,
         error: Schema.Union([UserNotFoundError, UserDecodingError, DatabaseError])
-    }),
-    Rpc.make('ListUsers',{
-        payload:Schema.Void,
+    })
+) { }
+
+export class ListUsersRouter extends RpcGroup.make(
+    Rpc.make('ListUsers', {
+        payload: Schema.Void,
         success: Schema.Array(User),
         error: Schema.Union([UserDecodingError, DatabaseError])
     })
 ) { }
 
-export const UserRouterLive = UserRouter.toLayer(
+// RPC handler implementations
+const CreateUserHandlerLive = CreateUserRouter.toLayer(
     Effect.gen(function* () {
         const users = yield* Users;
-
-        return {
-            CreateUser: (input)=>users.create(input),
-            GetUserById: ({id})=>users.findById(id),
-            UpdateUser: (input)=>users.update(input),
-            ListUsers:()=>users.list()
-        }
+        return { CreateUser: (input) => users.create(input) }
     })
+)
+
+const GetUserByIdHandlerLive = GetUserByIdRouter.toLayer(
+    Effect.gen(function* () {
+        const users = yield* Users;
+        return { GetUserById: ({ id }) => users.findById(id) }
+    })
+)
+
+const UpdateUserHandlerLive = UpdateUserRouter.toLayer(
+    Effect.gen(function* () {
+        const users = yield* Users;
+        return { UpdateUser: (input) => users.update(input) }
+    })
+)
+
+const ListUsersHandlerLive = ListUsersRouter.toLayer(
+    Effect.gen(function* () {
+        const users = yield* Users;
+        return { ListUsers: () => users.list() }
+    })
+)
+
+// Auto-register HTTP routes for each RPC group
+const CreateUserHttpRoute = RpcServer.layerHttp({
+    group: CreateUserRouter,
+    path: "/rpc/user/create",
+    protocol: "http"
+});
+
+const GetUserByIdHttpRoute = RpcServer.layerHttp({
+    group: GetUserByIdRouter,
+    path: "/rpc/user/get",
+    protocol: "http"
+});
+
+const UpdateUserHttpRoute = RpcServer.layerHttp({
+    group: UpdateUserRouter,
+    path: "/rpc/user/update",
+    protocol: "http"
+});
+
+const ListUsersHttpRoute = RpcServer.layerHttp({
+    group: ListUsersRouter,
+    path: "/rpc/user/list",
+    protocol: "http"
+});
+
+// Single export: handlers + routes
+export const UserRouterLive = Layer.mergeAll(
+    CreateUserHandlerLive,
+    GetUserByIdHandlerLive,
+    UpdateUserHandlerLive,
+    ListUsersHandlerLive,
+    CreateUserHttpRoute,
+    GetUserByIdHttpRoute,
+    UpdateUserHttpRoute,
+    ListUsersHttpRoute
 )

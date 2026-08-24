@@ -5,6 +5,7 @@
         "lib": ["deno.ns"]
     },
     "imports": {
+        "@effect/platform-deno": "npm:@effect/platform-deno@4.0.0-rc.111",
         "@effect/sql-pg": "npm:@effect/sql-pg@rc",
         "@types/pg": "npm:@types/pg@^8.23.1",
         "effect": "npm:effect@rc",

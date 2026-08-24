@@ -1,5 +1,5 @@
-import { Rpc, RpcGroup } from 'effect/unstable/rpc';
-import { Effect, Schema } from 'effect';
+import { Rpc, RpcGroup, RpcServer } from 'effect/unstable/rpc';
+import { Effect, Layer, Schema } from 'effect';
 import { CheckoutInputSchema, PaymentWithItems } from './model.ts';
 import { PaymentService } from './service.ts';
 import { UserNotFoundError, UserDecodingError } from '../user/error.ts';
@@ -7,7 +7,7 @@ import { ProductNotFoundError, ProductDecodingError, ProductInactiveError, Produ
 import { InsufficientBalanceError, PaymentDatabaseError, PaymentDecodingError, PaymentFailedError } from './error.ts';
 import { DatabaseError } from '../../db/error.ts';
 
-export class PaymentRouter extends RpcGroup.make(
+export class CheckoutRouter extends RpcGroup.make(
     Rpc.make('Checkout', {
         payload: CheckoutInputSchema,
         success: PaymentWithItems,
@@ -27,12 +27,23 @@ export class PaymentRouter extends RpcGroup.make(
     })
 ) {}
 
-export const PaymentRouterLive = PaymentRouter.toLayer(
+// RPC handler implementation
+const CheckoutHandlerLive = CheckoutRouter.toLayer(
     Effect.gen(function* () {
         const paymentService = yield* PaymentService;
-
-        return {
-            Checkout: (input) => paymentService.checkout(input)
-        }
+        return { Checkout: (input) => paymentService.checkout(input) }
     })
+)
+
+// Auto-registers POST /rpc/payment for the entire CheckoutRouter group
+const PaymentHttpRoutes = RpcServer.layerHttp({
+    group: CheckoutRouter,
+    path: "/rpc/payment",
+    protocol: "http"
+});
+
+// Single export: handlers + routes
+export const PaymentRouterLive = Layer.mergeAll(
+    CheckoutHandlerLive,
+    PaymentHttpRoutes
 )
