@@ -391,6 +391,7 @@
       },
       "apps/web": {
         "dependencies": [
+          "npm:@effect/platform-deno@4.0.0-rc.111",
           "npm:effect@rc"
         ]
       }

@@ -2,6 +2,7 @@
     "name": "@app/web",
     "version": "0.1.0",
     "imports": {
+        "@effect/platform-deno": "npm:@effect/platform-deno@4.0.0-rc.111",
         "effect": "npm:effect@rc"
     },
     "tasks": {
