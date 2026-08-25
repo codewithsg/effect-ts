@@ -5,7 +5,18 @@ import { DatabaseError } from "../../db/error.ts";
 import { dbQuery } from "../../db/db.ts";
 import { SqlClient } from "effect/unstable/sql";
 
-const decodeProduct = Schema.decodeUnknownEffect(Product);
+const decodeProductBase = Schema.decodeUnknownEffect(Product);
+const decodeProductListBase = Schema.decodeUnknownEffect(Schema.Array(Product));
+
+const decodeProduct = (row: any) => decodeProductBase({
+    ...row,
+    price: typeof row.price === 'string' ? parseFloat(row.price) : row.price
+});
+
+const decodeProductList = (rows: readonly any[]) => decodeProductListBase(rows.map(row => ({
+    ...row,
+    price: typeof row.price === 'string' ? parseFloat(row.price) : row.price
+})));
 
 export class Products extends Context.Service<Products,{
     readonly create: (input: TCreateProductInput) => Effect.Effect<Product, ProductAlreadyExistsError | ProductDecodingError | DatabaseError>;
