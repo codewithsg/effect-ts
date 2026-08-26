@@ -52,29 +52,27 @@ const UpdateProductHandlerLive = UpdateProductRouter.toLayer(
 )
 
 // Auto-register HTTP routes for each RPC group
+// Each route layer must have its handler layer provided to it
 const CreateProductHttpRoute = RpcServer.layerHttp({
     group: CreateProductRouter,
     path: "/rpc/product/create",
     protocol: "http"
-});
+}).pipe(Layer.provide(CreateProductHandlerLive));
 
 const GetProductByIdHttpRoute = RpcServer.layerHttp({
     group: GetProductByIdRouter,
     path: "/rpc/product/get",
     protocol: "http"
-});
+}).pipe(Layer.provide(GetProductByIdHandlerLive));
 
 const UpdateProductHttpRoute = RpcServer.layerHttp({
     group: UpdateProductRouter,
     path: "/rpc/product/update",
     protocol: "http"
-});
+}).pipe(Layer.provide(UpdateProductHandlerLive));
 
-// Single export: handlers + routes
+// Single export: routes (handlers are already wired into each route layer)
 export const ProductRouterLive = Layer.mergeAll(
-    CreateProductHandlerLive,
-    GetProductByIdHandlerLive,
-    UpdateProductHandlerLive,
     CreateProductHttpRoute,
     GetProductByIdHttpRoute,
     UpdateProductHttpRoute

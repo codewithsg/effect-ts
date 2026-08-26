@@ -44,7 +44,7 @@ export const ProductsLive = Layer.effect(
                 const insertedProduct = yield* dbQuery((sql)=> sql<Product>`
                 INSERT INTO products (name,description,price,stock,status)
                 VALUES (${input.name}, ${input.description}, ${input.price}, ${input.stock}, ${input.status})
-                `,
+                RETURNING *`,
                 'Failed to create product'
             );
 

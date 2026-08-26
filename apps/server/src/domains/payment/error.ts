@@ -15,7 +15,7 @@ export class PaymentFailedError extends Schema.TaggedError<PaymentFailedError>()
         paymentId: Schema.Number,
         userId: Schema.Number,
         message: Schema.String,
-        cause: Schema.Unknown
+        cause: Schema.optional(Schema.Unknown)
     }
 ) {}
 
@@ -24,7 +24,7 @@ export class PaymentDatabaseError extends Schema.TaggedError<PaymentDatabaseErro
     {
         userId: Schema.optional(Schema.Number),
         message: Schema.String,
-        cause: Schema.Unknown
+        cause: Schema.optional(Schema.Unknown)
     }
 ) {}
 
@@ -33,7 +33,7 @@ export class PaymentDecodingError extends Schema.TaggedError<PaymentDecodingErro
     {
         userId: Schema.optional(Schema.Number),
         message: Schema.String,
-        cause: Schema.Unknown
+        cause: Schema.optional(Schema.Unknown)
     }
 ) {}
 

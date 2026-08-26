@@ -67,36 +67,33 @@ const ListUsersHandlerLive = ListUsersRouter.toLayer(
 )
 
 // Auto-register HTTP routes for each RPC group
+// Each route layer must have its handler layer provided to it
 const CreateUserHttpRoute = RpcServer.layerHttp({
     group: CreateUserRouter,
     path: "/rpc/user/create",
     protocol: "http"
-});
+}).pipe(Layer.provide(CreateUserHandlerLive));
 
 const GetUserByIdHttpRoute = RpcServer.layerHttp({
     group: GetUserByIdRouter,
     path: "/rpc/user/get",
     protocol: "http"
-});
+}).pipe(Layer.provide(GetUserByIdHandlerLive));
 
 const UpdateUserHttpRoute = RpcServer.layerHttp({
     group: UpdateUserRouter,
     path: "/rpc/user/update",
     protocol: "http"
-});
+}).pipe(Layer.provide(UpdateUserHandlerLive));
 
 const ListUsersHttpRoute = RpcServer.layerHttp({
     group: ListUsersRouter,
     path: "/rpc/user/list",
     protocol: "http"
-});
+}).pipe(Layer.provide(ListUsersHandlerLive));
 
-// Single export: handlers + routes
+// Single export: routes (handlers are already wired into each route layer)
 export const UserRouterLive = Layer.mergeAll(
-    CreateUserHandlerLive,
-    GetUserByIdHandlerLive,
-    UpdateUserHandlerLive,
-    ListUsersHandlerLive,
     CreateUserHttpRoute,
     GetUserByIdHttpRoute,
     UpdateUserHttpRoute,

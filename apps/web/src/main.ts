@@ -5,6 +5,7 @@ import { CreateUserRouter } from "../../server/src/domains/user/router.ts";
 import { USER_ROLE } from "../../server/src/domains/user/model.ts";
 import { CreateProductRouter } from "../../server/src/domains/product/router.ts";
 import { PRODUCT_STATUS } from "../../server/src/domains/product/model.ts";
+import { CheckoutRouter } from "../../server/src/domains/payment/router.ts";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const randomInt = (min: number, max: number) =>
@@ -46,16 +47,20 @@ const program = Effect.gen(function* () {
     yield* Effect.logInfo('🌱 Starting web app & executing RPC client seed...');
 
     const REQS_PER_SEC = 10;
-    const TOTAL_REQUESTS = 1000;
+    const TOTAL_REQUESTS = 100; // Reduced for faster checkout testing
     const delayMillis = Math.floor(1000 / REQS_PER_SEC);
 
     // Initialize clients
     const userClient = yield* RpcClient.make(CreateUserRouter).pipe(
         Effect.provide(RpcClient.layerProtocolHttp({ url: "http://localhost:8848/rpc/user/create" }))
     );
-    
+
     const productClient = yield* RpcClient.make(CreateProductRouter).pipe(
         Effect.provide(RpcClient.layerProtocolHttp({ url: "http://localhost:8848/rpc/product/create" }))
+    );
+
+    const checkoutClient = yield* RpcClient.make(CheckoutRouter).pipe(
+        Effect.provide(RpcClient.layerProtocolHttp({ url: "http://localhost:8848/rpc/payment" }))
     );
 
     // Seed Users
@@ -65,7 +70,7 @@ const program = Effect.gen(function* () {
         email: `user${i}@example.com`,
         role: USER_ROLE.USER,
         isVerified: true,
-        availableAmount: randomInt(1000, 10000)
+        availableAmount: randomInt(1000, 50000) // Increased to ensure enough funds for checkouts
     }));
 
     yield* Stream.fromIterable(userPayloads).pipe(
@@ -76,15 +81,15 @@ const program = Effect.gen(function* () {
     yield* Effect.logInfo(`${TOTAL_REQUESTS} users seeded via RPC.`);
 
     // Seed Products
-    const totalProducts = Math.floor(TOTAL_REQUESTS / 10);
+    const totalProducts = Math.floor(TOTAL_REQUESTS / 2); // More products for variety
     yield* Effect.logInfo(`Seeding ${totalProducts} products via RPC...`);
     const productPayloads = Array.from({ length: totalProducts }).map((_, i) => {
         const name = randomProductName(i);
         return {
             name,
             description: `High-quality ${name.toLowerCase()} for professional use.`,
-            price: randomInt(100, 1000),
-            stock: randomInt(10, 100),
+            price: randomInt(10, 100), // Lower prices to allow multiple checkouts
+            stock: randomInt(100, 1000), // High stock so they don't run out easily
             status: PRODUCT_STATUS.ACTIVE
         };
     });
@@ -96,13 +101,37 @@ const program = Effect.gen(function* () {
     );
     yield* Effect.logInfo(`${totalProducts} products seeded via RPC.`);
 
+    // Simulate Carts and Checkouts
+    const totalCheckouts = 50;
+    yield* Effect.logInfo(`Simulating ${totalCheckouts} carts & checkouts...`);
+
+    const checkoutPayloads = Array.from({ length: totalCheckouts }).map(() => {
+        // Pick a random user (IDs start at 1 based on DB seeding logic usually)
+        const userId = randomInt(1, TOTAL_REQUESTS);
+        // Pick 1 to 5 random products for this "cart"
+        const numItemsInCart = randomInt(1, 5);
+        const products = Array.from({ length: numItemsInCart }).map(() => ({
+            id: randomInt(1, totalProducts),
+            quantity: randomInt(1, 3)
+        }));
+
+        return { userId, products: products as [any, ...any[]] }; // Type cast for NonEmptyArray
+    });
+
+    yield* Stream.fromIterable(checkoutPayloads).pipe(
+        Stream.schedule(Schedule.spaced(`${delayMillis} millis`)),
+        Stream.mapEffect(payload => checkoutClient.Checkout(payload), { concurrency: REQS_PER_SEC }),
+        Stream.runDrain
+    );
+    yield* Effect.logInfo(`${totalCheckouts} checkouts completed via RPC.`);
+
     yield* Effect.logInfo('✅ RPC seed completed successfully! Web app ready.');
 
     Deno.serve(
-        { 
-            port: 8849, 
-            onListen: () => console.log("running web on localhost:8849") 
-        }, 
+        {
+            port: 8849,
+            onListen: () => console.log("running web on localhost:8849")
+        },
         () => new Response("Web running on 8849 with RPC clients initialized")
     );
 });
