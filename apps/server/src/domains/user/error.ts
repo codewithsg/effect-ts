@@ -14,6 +14,6 @@ export class UserDecodingError extends Schema.TaggedError<UserDecodingError>()(
     'UserDecodingError',
     {
         message: Schema.String,
-        cause: Schema.Unknown
+        cause: Schema.optional(Schema.Unknown)
     }
 ){}

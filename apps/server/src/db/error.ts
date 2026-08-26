@@ -4,6 +4,6 @@ export class DatabaseError extends Schema.TaggedError<DatabaseError>()(
     "DatabaseError",
     {
         message: Schema.String,
-        cause: Schema.Unknown
+        cause: Schema.optional(Schema.Unknown)
     }
 ){}

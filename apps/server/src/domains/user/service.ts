@@ -6,8 +6,18 @@ import { dbQuery } from "../../db/db.ts";
 import { DatabaseError } from "../../db/error.ts";
 
 // Helper decoder for User Schema
-const decodeUser = Schema.decodeUnknownEffect(User);
-const decodeUserList = Schema.decodeUnknownEffect(Schema.Array(User));
+const decodeUserBase = Schema.decodeUnknownEffect(User);
+const decodeUserListBase = Schema.decodeUnknownEffect(Schema.Array(User));
+
+const decodeUser = (row: any) => decodeUserBase({
+    ...row,
+    availableAmount: typeof row.availableAmount === 'string' ? parseFloat(row.availableAmount) : row.availableAmount
+});
+
+const decodeUserList = (rows: readonly any[]) => decodeUserListBase(rows.map(row => ({
+    ...row,
+    availableAmount: typeof row.availableAmount === 'string' ? parseFloat(row.availableAmount) : row.availableAmount
+})));
 
 export class Users extends Context.Service<Users, {
     readonly findById: (id: number) => Effect.Effect<User, UserNotFoundError | UserDecodingError | DatabaseError>;
@@ -35,8 +45,8 @@ export const UsersLive = Layer.effect(
                 }
 
                 const insertedUser = yield* dbQuery((sql)=> sql<User>`
-                INSERT INTO users (name,email,role,isVerified)
-                VALUES (${input.name}, ${input.email}, ${input.role}, ${input.isVerified}) RETURNING *
+                INSERT INTO users (name, email, role, "isVerified", "availableAmount")
+                VALUES (${input.name}, ${input.email}, ${input.role}, ${input.isVerified}, ${input.availableAmount}) RETURNING *
                 `,
             'Failed to insert user.');
 
@@ -63,7 +73,7 @@ export const UsersLive = Layer.effect(
                 );
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
             list:()=>Effect.gen(function* () {
-                const data = yield* dbQuery((sql)=> sql<User[]>`SELECT * FROM users ORDER BY created_at desc`,
+                const data = yield* dbQuery((sql)=> sql<User>`SELECT * FROM users ORDER BY "createdAt" desc`,
             'Failed to list users');
 
                 return yield* decodeUserList(data).pipe(
@@ -86,7 +96,7 @@ export const UsersLive = Layer.effect(
             }
 
             const updatedUser = yield* dbQuery((sql)=> sql<User>`
-            UPDATE users SET name=${input.name ?? user.value.name}, role=${input.role ?? user.value.role}, isVerified=${input.isVerified ?? user.value.isVerified}, availableAmount=${input.availableAmount ?? user.value.availableAmount}
+            UPDATE users SET name=${input.name ?? user.value.name}, role=${input.role ?? user.value.role}, "isVerified"=${input.isVerified ?? user.value.isVerified}, "availableAmount"=${input.availableAmount ?? user.value.availableAmount}
             WHERE id=${input.id} RETURNING *`,
             'Failed to update user'
             );

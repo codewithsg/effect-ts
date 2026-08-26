@@ -36,14 +36,12 @@ const CheckoutHandlerLive = CheckoutRouter.toLayer(
 )
 
 // Auto-registers POST /rpc/payment for the entire CheckoutRouter group
+// Handler layer must be provided to the route layer
 const PaymentHttpRoutes = RpcServer.layerHttp({
     group: CheckoutRouter,
     path: "/rpc/payment",
     protocol: "http"
-});
+}).pipe(Layer.provide(CheckoutHandlerLive));
 
-// Single export: handlers + routes
-export const PaymentRouterLive = Layer.mergeAll(
-    CheckoutHandlerLive,
-    PaymentHttpRoutes
-)
+// Single export: route (handler is already wired in)
+export const PaymentRouterLive = PaymentHttpRoutes

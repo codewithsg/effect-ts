@@ -105,74 +105,7 @@ const createTables = Effect.gen(function* () {
     yield* Effect.logInfo('All tables created.');
 });
 
-// ─── Seed users ─────────────────────────────────────────────────────────────
-const seedUsers = Effect.gen(function* () {
-    const sql = yield* SqlClient.SqlClient;
 
-    yield* Effect.logInfo('Seeding 1000 users...');
-
-    const BATCH_SIZE = 100;
-    const TOTAL_USERS = 1000;
-
-    for (let batch = 0; batch < TOTAL_USERS / BATCH_SIZE; batch++) {
-        const values: string[] = [];
-        const params: unknown[] = [];
-
-        for (let i = 0; i < BATCH_SIZE; i++) {
-            const idx = batch * BATCH_SIZE + i;
-            const name = randomName(idx);
-            const email = `user${idx}@example.com`;
-            const role = 'user';
-            const isVerified = true;
-            const availableAmount = randomInt(1000, 10000);
-
-            const offset = i * 5;
-            values.push(
-                `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`
-            );
-            params.push(name, email, role, isVerified, availableAmount);
-        }
-
-        yield* sql.unsafe(
-            `INSERT INTO users (name, email, role, "isVerified", "availableAmount") VALUES ${values.join(', ')}`,
-            params
-        );
-    }
-
-    yield* Effect.logInfo('1000 users seeded.');
-});
-
-// ─── Seed products ──────────────────────────────────────────────────────────
-const seedProducts = Effect.gen(function* () {
-    const sql = yield* SqlClient.SqlClient;
-
-    yield* Effect.logInfo('Seeding 100 products...');
-
-    const values: string[] = [];
-    const params: unknown[] = [];
-    const TOTAL_PRODUCTS = 100;
-
-    for (let i = 0; i < TOTAL_PRODUCTS; i++) {
-        const name = randomProductName(i);
-        const description = `High-quality ${name.toLowerCase()} for professional use.`;
-        const price = randomInt(100, 1000);
-        const stock = randomInt(10, 100);
-        const status = 'active';
-
-        const offset = i * 5;
-        values.push(
-            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`
-        );
-        params.push(name, description, price, stock, status);
-    }
-
-    yield* sql.unsafe(
-        `INSERT INTO products (name, description, price, stock, status) VALUES ${values.join(', ')}`,
-        params
-    );
-
-    yield* Effect.logInfo('100 products seeded.');
-});
 
 // ─── Main seed pipeline ─────────────────────────────────────────────────────
 export const seed = Effect.gen(function* () {
@@ -180,8 +113,6 @@ export const seed = Effect.gen(function* () {
 
     yield* createTables;
     yield* truncateTables;
-    yield* seedUsers;
-    yield* seedProducts;
 
     yield* Effect.logInfo('✅ Database seed completed successfully!');
 });

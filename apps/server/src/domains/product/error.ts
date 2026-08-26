@@ -14,7 +14,7 @@ export class ProductDecodingError extends Schema.TaggedError<ProductDecodingErro
     'ProductDecodingError',
     {
         message:Schema.String,
-        cause: Schema.Unknown
+        cause: Schema.optional(Schema.Unknown)
     }
 ){}
 
