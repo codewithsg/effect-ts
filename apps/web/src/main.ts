@@ -75,7 +75,12 @@ const program = Effect.gen(function* () {
 
     yield* Stream.fromIterable(userPayloads).pipe(
         Stream.schedule(Schedule.spaced(`${delayMillis} millis`)),
-        Stream.mapEffect(payload => userClient.CreateUser(payload), { concurrency: REQS_PER_SEC }),
+        Stream.mapEffect(payload => userClient.CreateUser(payload).pipe(
+            Effect.match({
+                onFailure: (err) => console.error(`❌ Failed to seed user ${payload.email}:`, err),
+                onSuccess: (res) => console.log(`✅ Successfully seeded user ${res.id}`)
+            })
+        ), { concurrency: REQS_PER_SEC }),
         Stream.runDrain
     );
     yield* Effect.logInfo(`${TOTAL_REQUESTS} users seeded via RPC.`);
@@ -96,13 +101,18 @@ const program = Effect.gen(function* () {
 
     yield* Stream.fromIterable(productPayloads).pipe(
         Stream.schedule(Schedule.spaced(`${delayMillis} millis`)),
-        Stream.mapEffect(payload => productClient.CreateProduct(payload), { concurrency: REQS_PER_SEC }),
+        Stream.mapEffect(payload => productClient.CreateProduct(payload).pipe(
+            Effect.match({
+                onFailure: (err) => console.error(`❌ Failed to seed product ${payload.name}:`, err),
+                onSuccess: (res) => console.log(`✅ Successfully seeded product ${res.id}`)
+            })
+        ), { concurrency: REQS_PER_SEC }),
         Stream.runDrain
     );
     yield* Effect.logInfo(`${totalProducts} products seeded via RPC.`);
 
     // Simulate Carts and Checkouts
-    const totalCheckouts = 50;
+    const totalCheckouts = 50000;
     yield* Effect.logInfo(`Simulating ${totalCheckouts} carts & checkouts...`);
 
     const checkoutPayloads = Array.from({ length: totalCheckouts }).map(() => {
@@ -119,8 +129,13 @@ const program = Effect.gen(function* () {
     });
 
     yield* Stream.fromIterable(checkoutPayloads).pipe(
-        Stream.schedule(Schedule.spaced(`${delayMillis} millis`)),
-        Stream.mapEffect(payload => checkoutClient.Checkout(payload), { concurrency: REQS_PER_SEC }),
+        // Removed rate limit to hit API as much as possible
+        Stream.mapEffect(payload => checkoutClient.Checkout(payload).pipe(
+            Effect.match({
+                onFailure: (err) => console.error(`❌ Checkout failed for user ${payload.userId}:`, err),
+                onSuccess: (res) => console.log(`🛒 Checkout completed for user ${payload.userId}, payment ${res.id}`)
+            })
+        ), { concurrency: 100 }), // Increased concurrency for maximum hits
         Stream.runDrain
     );
     yield* Effect.logInfo(`${totalCheckouts} checkouts completed via RPC.`);
