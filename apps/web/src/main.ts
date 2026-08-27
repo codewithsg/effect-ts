@@ -1,4 +1,5 @@
 import { Effect, Stream, Schedule } from "effect";
+import { DevTools } from "effect/unstable/devtools";
 import { FetchHttpClient } from "effect/unstable/http";
 import { RpcClient, RpcSerialization } from "effect/unstable/rpc";
 import { CreateUserRouter } from "../../server/src/domains/user/router.ts";
@@ -131,6 +132,7 @@ const program = Effect.gen(function* () {
     yield* Stream.fromIterable(checkoutPayloads).pipe(
         // Removed rate limit to hit API as much as possible
         Stream.mapEffect(payload => checkoutClient.Checkout(payload).pipe(
+            // Effect.match returns Effect<void, never> — both paths handled, nothing left to catch.
             Effect.match({
                 onFailure: (err) => console.error(`❌ Checkout failed for user ${payload.userId}:`, err),
                 onSuccess: (res) => console.log(`🛒 Checkout completed for user ${payload.userId}, payment ${res.id}`)
@@ -149,12 +151,13 @@ const program = Effect.gen(function* () {
         },
         () => new Response("Web running on 8849 with RPC clients initialized")
     );
-});
+}).pipe(Effect.withSpan("Web.startup"));
 
 Effect.runPromise(
     program.pipe(
         Effect.scoped,
         Effect.provide(FetchHttpClient.layer),
-        Effect.provide(RpcSerialization.layerJson)
+        Effect.provide(RpcSerialization.layerJson),
+        Effect.provide(DevTools.layer())
     )
 ).catch(console.error);

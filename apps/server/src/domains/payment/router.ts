@@ -18,7 +18,6 @@ export class CheckoutRouter extends RpcGroup.make(
             ProductDecodingError,
             ProductInactiveError,
             ProductInSufficientStockError,
-            InsufficientBalanceError,
             PaymentDatabaseError,
             PaymentDecodingError,
             PaymentFailedError,

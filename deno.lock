@@ -3,8 +3,8 @@
   "specifiers": {
     "npm:@effect/platform-deno@4.0.0-rc.111": "4.0.0-rc.111_effect@4.0.0-rc.110",
     "npm:@effect/platform-deno@rc": "4.0.0-rc.111_effect@4.0.0-rc.110",
-    "npm:@effect/platform@*": "0.62.0_@effect+schema@0.71.4__effect@4.0.0-rc.110_effect@4.0.0-rc.110",
-    "npm:@effect/platform@0.62.0": "0.62.0_@effect+schema@0.71.4__effect@4.0.0-rc.110_effect@4.0.0-rc.110",
+    "npm:@effect/platform@*": "0.62.0_effect@4.0.0-rc.110",
+    "npm:@effect/platform@0.62.0": "0.62.0_effect@4.0.0-rc.110",
     "npm:@effect/sql-pg@rc": "4.0.0-rc.110_effect@4.0.0-rc.110",
     "npm:@types/pg@^8.23.1": "8.23.1",
     "npm:effect@rc": "4.0.0-rc.110",
@@ -31,7 +31,7 @@
         "ws"
       ]
     },
-    "@effect/platform@0.62.0_@effect+schema@0.71.4__effect@4.0.0-rc.110_effect@4.0.0-rc.110": {
+    "@effect/platform@0.62.0_effect@4.0.0-rc.110": {
       "integrity": "sha512-Zt+nr+CWcqJ6O6mLsG0YYav1Kwwody+LZ0EuwuwoqVrTLdy2ZYG6mbrklYx5SbXoCLtUisfmyUh0GbffviJ/xA==",
       "dependencies": [
         "@effect/schema",
