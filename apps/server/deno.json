@@ -9,6 +9,7 @@
         "@effect/sql-pg": "npm:@effect/sql-pg@rc",
         "@types/pg": "npm:@types/pg@^8.23.1",
         "effect": "npm:effect@rc",
+        "evlog": "npm:evlog@^2.27.0",
         "pg": "npm:pg@^8.23.0"
     },
     "tasks": {

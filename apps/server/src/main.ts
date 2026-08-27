@@ -1,6 +1,6 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Logger } from "effect";
 import { DevTools } from "effect/unstable/devtools";
-import { FileLoggerLive } from "./utils/logger.ts";
+import { log, LoggingsucksLogger } from "./utils/logger.ts";
 import { HttpRouter } from "effect/unstable/http";
 import { RpcSerialization } from "effect/unstable/rpc";
 import { DenoHttpServer } from "@effect/platform-deno";
@@ -20,8 +20,8 @@ const serverLayer = HttpRouter.serve(MainRouterLive).pipe(
 const program = Effect.gen(function* () {
     yield* checkDatabaseHealth;
     yield* seed;
-    yield* Effect.logInfo("Server started on port 8848");
-}).pipe(Effect.withSpan("Server.startup"));
+    yield* Effect.sync(() => log.info("Server started on port 8848"));
+});
 
 
 
@@ -33,7 +33,7 @@ const runnable = program.pipe(
     Effect.provide(sqlConnection),
     Effect.provide(RpcSerialization.layerJson),
     Effect.provide(DevTools.layer()),
-    Effect.provide(FileLoggerLive)
+    Effect.provide(Logger.layer([LoggingsucksLogger]))
 );
 
 Effect.runPromise (runnable as any);

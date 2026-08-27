@@ -3,6 +3,7 @@ import { Effect, Redacted } from 'effect'
 import { SqlClient, SqlError } from 'effect/unstable/sql'
 import { retryable } from "../utils/retry.ts";
 import { DatabaseError } from "./error.ts";
+import { log } from "../utils/logger.ts";
 
 export const sqlConnection = PgClient.layer({
     url: Redacted.make(Deno.env.get("DATABASE_URL")!)
@@ -13,7 +14,7 @@ export const checkDatabaseHealth = Effect.gen(function* () {
 
     yield* retryable(sql`SELECT 1`, 10);
 
-    yield* Effect.logInfo('Database connected successfully...')
+    yield* Effect.sync(() => log.info('Database connected successfully...'))
 })
 
 export const dbQuery = <A>(

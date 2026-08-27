@@ -1,5 +1,6 @@
 import { Effect } from 'effect';
 import { SqlClient } from 'effect/unstable/sql';
+import { log } from "../utils/logger.ts";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const randomInt = (min: number, max: number) =>
@@ -40,19 +41,19 @@ const randomProductName = (index: number) => {
 const truncateTables = Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
 
-    yield* Effect.logInfo('Truncating tables...');
+    yield* Effect.sync(() => log.info('Truncating tables...'));
 
     // Order matters: child tables first to respect FK constraints
     yield* sql`TRUNCATE TABLE payment_items, payments, products, users RESTART IDENTITY CASCADE`;
 
-    yield* Effect.logInfo('All tables truncated.');
+    yield* Effect.sync(() => log.info('All tables truncated.'));
 });
 
 // ─── Create tables ──────────────────────────────────────────────────────────
 const createTables = Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
 
-    yield* Effect.logInfo('Creating tables if not exists...');
+    yield* Effect.sync(() => log.info('Creating tables if not exists...'));
 
     yield* sql`
         CREATE TABLE IF NOT EXISTS users (
@@ -102,17 +103,17 @@ const createTables = Effect.gen(function* () {
         )
     `;
 
-    yield* Effect.logInfo('All tables created.');
+    yield* Effect.sync(() => log.info('All tables created.'));
 });
 
 
 
 // ─── Main seed pipeline ─────────────────────────────────────────────────────
 export const seed = Effect.gen(function* () {
-    yield* Effect.logInfo('🌱 Starting database seed...');
+    yield* Effect.sync(() => log.info('🌱 Starting database seed...'));
 
     yield* createTables;
     yield* truncateTables;
 
-    yield* Effect.logInfo('✅ Database seed completed successfully!');
+    yield* Effect.sync(() => log.info('✅ Database seed completed successfully!'));
 });

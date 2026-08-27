@@ -77,6 +77,7 @@ const program = Effect.gen(function* () {
     yield* Stream.fromIterable(userPayloads).pipe(
         Stream.schedule(Schedule.spaced(`${delayMillis} millis`)),
         Stream.mapEffect(payload => userClient.CreateUser(payload).pipe(
+            Effect.retry({ times: 15, schedule: Schedule.spaced("1 seconds") }),
             Effect.match({
                 onFailure: (err) => console.error(`❌ Failed to seed user ${payload.email}:`, err),
                 onSuccess: (res) => console.log(`✅ Successfully seeded user ${res.id}`)

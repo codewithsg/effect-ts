@@ -7,7 +7,10 @@
     "npm:@effect/platform@0.62.0": "0.62.0_effect@4.0.0-rc.110",
     "npm:@effect/sql-pg@rc": "4.0.0-rc.110_effect@4.0.0-rc.110",
     "npm:@types/pg@^8.23.1": "8.23.1",
+    "npm:effect@*": "3.22.1",
     "npm:effect@rc": "4.0.0-rc.110",
+    "npm:evlog@*": "2.27.0",
+    "npm:evlog@^2.27.0": "2.27.0",
     "npm:pg@^8.23.0": "8.23.0"
   },
   "npm": {
@@ -20,14 +23,14 @@
         "@std/media-types@npm:@jsr/std__media-types@1.1.0",
         "@std/path@npm:@jsr/std__path@1.1.6",
         "@std/streams@npm:@jsr/std__streams@1.1.2",
-        "effect"
+        "effect@4.0.0-rc.110"
       ]
     },
     "@effect/platform-node-shared@4.0.0-rc.111_effect@4.0.0-rc.110": {
       "integrity": "sha512-iES0Q9vmjhaUKqeW9ceonuD45MUg/Ouk08LzRSptZ+B5qB0w9WlRjDmUz5TJmY2betNop5FRI5k4AD4mtQt3Bw==",
       "dependencies": [
         "@types/ws",
-        "effect",
+        "effect@4.0.0-rc.110",
         "ws"
       ]
     },
@@ -35,7 +38,7 @@
       "integrity": "sha512-Zt+nr+CWcqJ6O6mLsG0YYav1Kwwody+LZ0EuwuwoqVrTLdy2ZYG6mbrklYx5SbXoCLtUisfmyUh0GbffviJ/xA==",
       "dependencies": [
         "@effect/schema",
-        "effect",
+        "effect@4.0.0-rc.110",
         "find-my-way-ts",
         "multipasta"
       ]
@@ -43,7 +46,7 @@
     "@effect/schema@0.71.4_effect@4.0.0-rc.110": {
       "integrity": "sha512-iAAEusrhHQ2xVVTHbnZhSgiSuL81s8befP1Bl+AI7PEJg++HfHQSOEnU+narX/f7udJZ1EY/Ir0G+ATXSK8TZg==",
       "dependencies": [
-        "effect",
+        "effect@4.0.0-rc.110",
         "fast-check@3.23.2"
       ],
       "deprecated": true
@@ -51,7 +54,7 @@
     "@effect/sql-pg@4.0.0-rc.110_effect@4.0.0-rc.110": {
       "integrity": "sha512-GiJkQPAXGXyVB+fQkZ5NvUY1D2Um4nnsY63l5/lBhb/UNqqPLyMwPJil7rPopAoX9pzYkbpwJjMKRJuIlR9ixg==",
       "dependencies": [
-        "effect",
+        "effect@4.0.0-rc.110",
         "pg",
         "pg-connection-string",
         "pg-cursor",
@@ -200,6 +203,13 @@
     "detect-libc@2.1.2": {
       "integrity": "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="
     },
+    "effect@3.22.1": {
+      "integrity": "sha512-TNoXushmPOBAjJlthF5d2QwnX2xBPEtcNJr5XKNKbRLbDvBcOYkXlYDfvGfSA0zriwLFuCll5MDtNMAdZL17PQ==",
+      "dependencies": [
+        "@standard-schema/spec",
+        "fast-check@3.23.2"
+      ]
+    },
     "effect@4.0.0-rc.110": {
       "integrity": "sha512-ega6FTJ8CS2of7tHZiADvgyJyV999Q6tZ9juE56V81O0jw6flRwydaPNtyfvP2a5LL9PZrse8A1jnNUD5sWVHg==",
       "dependencies": [
@@ -207,6 +217,9 @@
         "fast-check@4.9.0",
         "msgpackr"
       ]
+    },
+    "evlog@2.27.0": {
+      "integrity": "sha512-UXciHJuzIFSi6yLGKsrPDyUW0uqj2MGuq1T/cYKpGRES9xNwjLTs62w/zoY019Z5/MeD4doYotpXJcqVYo/Oww=="
     },
     "fast-check@3.23.2": {
       "integrity": "sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A==",
@@ -386,6 +399,7 @@
           "npm:@effect/sql-pg@rc",
           "npm:@types/pg@^8.23.1",
           "npm:effect@rc",
+          "npm:evlog@^2.27.0",
           "npm:pg@^8.23.0"
         ]
       },

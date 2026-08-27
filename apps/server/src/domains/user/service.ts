@@ -4,6 +4,7 @@ import { User,TCreateUserInput, TUpdateUserInput } from "./model.ts";
 import { UserAlreadyExistsError, UserDecodingError, UserNotFoundError } from "./error.ts";
 import { dbQuery } from "../../db/db.ts";
 import { DatabaseError } from "../../db/error.ts";
+import { log } from "../../utils/logger.ts";
 
 // Helper decoder for User Schema
 const decodeUserBase = Schema.decodeUnknownEffect(User);
@@ -11,7 +12,7 @@ const decodeUserListBase = Schema.decodeUnknownEffect(Schema.Array(User));
 
 const decodeUser = (row: any) => {
     if (row === undefined || row.availableAmount === undefined) {
-        console.error("🔥🔥 decodeUser row is invalid:", row);
+        Effect.logError("🔥🔥 decodeUser row is invalid:").pipe(Effect.annotateLogs({ row }));
     }
     return decodeUserBase({
         ...row,
@@ -48,18 +49,16 @@ export const UsersLive = Layer.effect(
 
                 if(existing[0]?.count > 0) {
                     // ── Wide event: user already exists ──────────────────────
-                    yield* Effect.logWarning("User creation blocked — email already registered").pipe(
-                        Effect.annotateLogs({
-                            event: "user.create",
-                            outcome: "error",
-                            "error.type": "UserAlreadyExistsError",
-                            "error.code": "email_conflict",
-                            "error.retriable": false,
-                            "user.email": input.email,
-                            duration_ms: Date.now() - startTime,
-                        })
-                    );
-                    return yield* new UserAlreadyExistsError({email: input.email});
+                    yield* Effect.logWarning("User creation blocked — email already registered").pipe(Effect.annotateLogs({
+                        event: "user.create",
+                        outcome: "error",
+                        "error.type": "UserAlreadyExistsError",
+                        "error.code": "email_conflict",
+                        "error.retriable": false,
+                        "user.email": input.email,
+                        duration_ms: Date.now() - startTime,
+                    }));
+                    return yield* new UserAlreadyExistsError({email: input.email, name: input.name});
                 }
 
                 const insertedUser = yield* dbQuery((sql)=> sql<User>`
@@ -71,21 +70,19 @@ export const UsersLive = Layer.effect(
                 const user = yield* decodeUser(insertedUser[0]).pipe(
                     Effect.mapError((cause)=>new UserDecodingError({
                         message: 'Failed to decode user returned from database',
-                        cause
+                        cause: String(cause)
                     }))
                 );
 
                 // ── Wide event: user created ──────────────────────────────
-                yield* Effect.logInfo("User created").pipe(
-                    Effect.annotateLogs({
-                        event: "user.create",
-                        outcome: "success",
-                        "user.id": user.id,
-                        "user.email": user.email,
-                        "user.role": user.role,
-                        duration_ms: Date.now() - startTime,
-                    })
-                );
+                yield* Effect.logInfo("User created").pipe(Effect.annotateLogs({
+                    event: "user.create",
+                    outcome: "success",
+                    "user.id": user.id,
+                    "user.email": user.email,
+                    "user.role": user.role,
+                    duration_ms: Date.now() - startTime,
+                }));
 
                 return user;
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
@@ -100,7 +97,7 @@ export const UsersLive = Layer.effect(
                 return yield* decodeUser(user.value).pipe(
                     Effect.mapError((cause)=>new UserDecodingError({
                         message: 'Failed to decode user returned from database',
-                        cause
+                        cause: String(cause)
                     }))
                 );
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
@@ -111,7 +108,7 @@ export const UsersLive = Layer.effect(
                 return yield* decodeUserList(data).pipe(
                     Effect.mapError((cause)=>new UserDecodingError({
                         message: 'Failed to decode user returned from database',
-                        cause
+                        cause: String(cause)
                     }))
                 );
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
@@ -136,7 +133,7 @@ export const UsersLive = Layer.effect(
             return yield* decodeUser(updatedUser[0]).pipe(
                 Effect.mapError((cause)=>new UserDecodingError({
                     message: 'Failed to decode user returned from database',
-                    cause
+                    cause: String(cause)
                 }))
             );  
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql))

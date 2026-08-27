@@ -4,6 +4,7 @@ import { ProductAlreadyExistsError, ProductDecodingError, ProductNotFoundError }
 import { DatabaseError } from "../../db/error.ts";
 import { dbQuery } from "../../db/db.ts";
 import { SqlClient } from "effect/unstable/sql";
+import { log } from "../../utils/logger.ts";
 
 const decodeProductBase = Schema.decodeUnknownEffect(Product);
 const decodeProductListBase = Schema.decodeUnknownEffect(Schema.Array(Product));
@@ -40,17 +41,15 @@ export const ProductsLive = Layer.effect(
 
                 if(existing[0]?.count > 0) {
                     // ── Wide event: product name conflict ─────────────────────
-                    yield* Effect.logWarning("Product creation blocked — name already exists").pipe(
-                        Effect.annotateLogs({
-                            event: "product.create",
-                            outcome: "error",
-                            "error.type": "ProductAlreadyExistsError",
-                            "error.code": "name_conflict",
-                            "error.retriable": false,
-                            "product.name": input.name,
-                            duration_ms: Date.now() - startTime,
-                        })
-                    );
+                    yield* Effect.logWarning("Product creation blocked — name already exists").pipe(Effect.annotateLogs({
+                        event: "product.create",
+                        outcome: "error",
+                        "error.type": "ProductAlreadyExistsError",
+                        "error.code": "name_conflict",
+                        "error.retriable": false,
+                        "product.name": input.name,
+                        duration_ms: Date.now() - startTime,
+                    }));
                     return yield* new ProductAlreadyExistsError({name: input.name});
                 }
 
@@ -64,23 +63,21 @@ export const ProductsLive = Layer.effect(
             const product = yield* decodeProduct(insertedProduct[0]).pipe(
                 Effect.mapError((cause)=>new ProductDecodingError({
                     message: 'Failed to decode product returned from database',
-                    cause
+                    cause: String(cause)
                 }))
             );
 
             // ── Wide event: product created ────────────────────────────
-            yield* Effect.logInfo("Product created").pipe(
-                Effect.annotateLogs({
-                    event: "product.create",
-                    outcome: "success",
-                    "product.id": product.id,
-                    "product.name": product.name,
-                    "product.price": product.price,
-                    "product.stock": product.stock,
-                    "product.status": product.status,
-                    duration_ms: Date.now() - startTime,
-                })
-            );
+            yield* Effect.logInfo("Product created").pipe(Effect.annotateLogs({
+                event: "product.create",
+                outcome: "success",
+                "product.id": product.id,
+                "product.name": product.name,
+                "product.price": product.price,
+                "product.stock": product.stock,
+                "product.status": product.status,
+                duration_ms: Date.now() - startTime,
+            }));
 
             return product;
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
@@ -95,7 +92,7 @@ export const ProductsLive = Layer.effect(
             return yield* decodeProduct(product.value).pipe(
                 Effect.mapError((cause)=>new ProductDecodingError({
                     message: 'Failed to decode product returned from database',
-                    cause
+                    cause: String(cause)
                 }))
             );
             }).pipe(Effect.provideService(SqlClient.SqlClient,sql)),
@@ -120,7 +117,7 @@ export const ProductsLive = Layer.effect(
             return yield* decodeProduct(updatedProduct[0]).pipe(
                 Effect.mapError((cause)=>new ProductDecodingError({
                     message: 'Failed to decode product returned from database',
-                    cause
+                    cause: String(cause)
                 }))
             );  
             }).pipe(Effect.provideService(SqlClient.SqlClient,sql))

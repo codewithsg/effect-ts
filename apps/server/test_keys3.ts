@@ -1,0 +1,1 @@
+import { Logger, Effect } from "effect"; const L = Logger.make((options) => { console.log(Object.keys(options)); if ("annotations" in options) console.log(Array.from(options.annotations as any)); }); Effect.runSync(Effect.provide(Effect.annotateLogs(Effect.logInfo("test"), "foo", "bar"), Logger.layer([L])))
