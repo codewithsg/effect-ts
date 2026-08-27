@@ -32,12 +32,25 @@ export const ProductsLive = Layer.effect(
 
         return Products.of({
             create: (input) => Effect.gen(function* (){
+                const startTime = Date.now();
                 const existing = yield* dbQuery((sql)=>
                 sql<{count:number}>`SELECT count(*)::int as count FROM products WHERE name=${input.name}`,
                 'Failed to check whether product already exists'
                 );
 
-                if(existing[0]?.count >0) {
+                if(existing[0]?.count > 0) {
+                    // ── Wide event: product name conflict ─────────────────────
+                    yield* Effect.logWarning("Product creation blocked — name already exists").pipe(
+                        Effect.annotateLogs({
+                            event: "product.create",
+                            outcome: "error",
+                            "error.type": "ProductAlreadyExistsError",
+                            "error.code": "name_conflict",
+                            "error.retriable": false,
+                            "product.name": input.name,
+                            duration_ms: Date.now() - startTime,
+                        })
+                    );
                     return yield* new ProductAlreadyExistsError({name: input.name});
                 }
 
@@ -48,12 +61,28 @@ export const ProductsLive = Layer.effect(
                 'Failed to create product'
             );
 
-            return yield* decodeProduct(insertedProduct[0]).pipe(
+            const product = yield* decodeProduct(insertedProduct[0]).pipe(
                 Effect.mapError((cause)=>new ProductDecodingError({
                     message: 'Failed to decode product returned from database',
                     cause
                 }))
             );
+
+            // ── Wide event: product created ────────────────────────────
+            yield* Effect.logInfo("Product created").pipe(
+                Effect.annotateLogs({
+                    event: "product.create",
+                    outcome: "success",
+                    "product.id": product.id,
+                    "product.name": product.name,
+                    "product.price": product.price,
+                    "product.stock": product.stock,
+                    "product.status": product.status,
+                    duration_ms: Date.now() - startTime,
+                })
+            );
+
+            return product;
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
             findById: (id)=> Effect.gen(function* (){
                 const data = yield* dbQuery((sql)=> sql<Product>`SELECT * FROM products WHERE id=${id}`,

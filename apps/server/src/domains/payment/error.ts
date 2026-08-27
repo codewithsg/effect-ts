@@ -5,7 +5,7 @@ export class InsufficientBalanceError extends Schema.TaggedError<InsufficientBal
     {
         userId: Schema.Number,
         requiredAmount: Schema.Number,
-        availableAmount: Schema.Number
+        availAmount: Schema.Number
     }
 ) {}
 
@@ -15,7 +15,7 @@ export class PaymentFailedError extends Schema.TaggedError<PaymentFailedError>()
         paymentId: Schema.Number,
         userId: Schema.Number,
         message: Schema.String,
-        cause: Schema.optional(Schema.Unknown)
+        cause: Schema.optional(Schema.String)
     }
 ) {}
 
@@ -24,7 +24,7 @@ export class PaymentDatabaseError extends Schema.TaggedError<PaymentDatabaseErro
     {
         userId: Schema.optional(Schema.Number),
         message: Schema.String,
-        cause: Schema.optional(Schema.Unknown)
+        cause: Schema.optional(Schema.String)
     }
 ) {}
 
@@ -33,7 +33,7 @@ export class PaymentDecodingError extends Schema.TaggedError<PaymentDecodingErro
     {
         userId: Schema.optional(Schema.Number),
         message: Schema.String,
-        cause: Schema.optional(Schema.Unknown)
+        cause: Schema.optional(Schema.String)
     }
 ) {}
 

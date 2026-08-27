@@ -26,8 +26,8 @@ export const dbQuery = <A>(
         return yield* query(sql).pipe(
             Effect.mapError(
                 (cause)=> new DatabaseError({
-                    message: errorMessage,
-                    cause
+                    message: errorMessage || 'Database query failed',
+                    cause: cause instanceof Error ? `${cause.name}: ${cause.message} - ${(cause as any).cause || ''}` : String(cause)
                 })
             )
         )

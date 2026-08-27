@@ -9,14 +9,19 @@ import { DatabaseError } from "../../db/error.ts";
 const decodeUserBase = Schema.decodeUnknownEffect(User);
 const decodeUserListBase = Schema.decodeUnknownEffect(Schema.Array(User));
 
-const decodeUser = (row: any) => decodeUserBase({
-    ...row,
-    availableAmount: typeof row.availableAmount === 'string' ? parseFloat(row.availableAmount) : row.availableAmount
-});
+const decodeUser = (row: any) => {
+    if (row === undefined || row.availableAmount === undefined) {
+        console.error("🔥🔥 decodeUser row is invalid:", row);
+    }
+    return decodeUserBase({
+        ...row,
+        availableAmount: typeof row?.availableAmount === 'string' ? parseFloat(row.availableAmount) : row?.availableAmount
+    });
+};
 
 const decodeUserList = (rows: readonly any[]) => decodeUserListBase(rows.map(row => ({
     ...row,
-    availableAmount: typeof row.availableAmount === 'string' ? parseFloat(row.availableAmount) : row.availableAmount
+    availableAmount: typeof row?.availableAmount === 'string' ? parseFloat(row.availableAmount) : row?.availableAmount
 })));
 
 export class Users extends Context.Service<Users, {
@@ -35,12 +40,25 @@ export const UsersLive = Layer.effect(
 
         return Users.of({
             create: (input)=> Effect.gen(function* (){
+                const startTime = Date.now();
                 const existing = yield* dbQuery((sql)=> 
                     sql<{count: number}>`SELECT count(*)::int as count FROM users WHERE email= ${input.email}`,
                 'Failed to check whether user already exists'
                 );
 
                 if(existing[0]?.count > 0) {
+                    // ── Wide event: user already exists ──────────────────────
+                    yield* Effect.logWarning("User creation blocked — email already registered").pipe(
+                        Effect.annotateLogs({
+                            event: "user.create",
+                            outcome: "error",
+                            "error.type": "UserAlreadyExistsError",
+                            "error.code": "email_conflict",
+                            "error.retriable": false,
+                            "user.email": input.email,
+                            duration_ms: Date.now() - startTime,
+                        })
+                    );
                     return yield* new UserAlreadyExistsError({email: input.email});
                 }
 
@@ -50,12 +68,26 @@ export const UsersLive = Layer.effect(
                 `,
             'Failed to insert user.');
 
-                return yield* decodeUser(insertedUser[0]).pipe(
+                const user = yield* decodeUser(insertedUser[0]).pipe(
                     Effect.mapError((cause)=>new UserDecodingError({
                         message: 'Failed to decode user returned from database',
                         cause
                     }))
-                )
+                );
+
+                // ── Wide event: user created ──────────────────────────────
+                yield* Effect.logInfo("User created").pipe(
+                    Effect.annotateLogs({
+                        event: "user.create",
+                        outcome: "success",
+                        "user.id": user.id,
+                        "user.email": user.email,
+                        "user.role": user.role,
+                        duration_ms: Date.now() - startTime,
+                    })
+                );
+
+                return user;
             }).pipe(Effect.provideService(SqlClient.SqlClient, sql)),
             findById: (id)=> Effect.gen(function* () {
                 const data = yield* dbQuery((sql)=> sql<User>`SELECT * FROM users where id=${id} LIMIT 1`,
@@ -111,4 +143,3 @@ export const UsersLive = Layer.effect(
         })
     })
 )
-
